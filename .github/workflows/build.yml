@@ -35,8 +35,20 @@ jobs:
       - name: 編譯（網頁端＋測試＋三種越獄的 deb）
         run: |
           cd src
-          make --version | head -1
-          ./build.sh
+          chmod +x build.sh tweak/build-all.sh
+          make --version > /dev/null && echo "make OK"
+          set -o pipefail
+          bash ./build.sh 2>&1 | tee build.log
+
+      - name: 失敗時把錯誤顯示在頁面摘要
+        if: failure()
+        run: |
+          {
+            echo '## 編譯失敗紀錄（最後 80 行）'
+            echo '```'
+            tail -n 80 src/build.log 2>/dev/null || echo "(沒有 build.log，失敗發生在更早的步驟)"
+            echo '```'
+          } >> $GITHUB_STEP_SUMMARY
 
       - name: 上傳結果
         uses: actions/upload-artifact@v4
